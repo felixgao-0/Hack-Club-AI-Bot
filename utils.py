@@ -2,6 +2,9 @@ import json
 import os
 
 import requests
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
 
 
 def ask_ai(question: str) -> dict:
@@ -15,5 +18,19 @@ def ask_ai(question: str) -> dict:
         'messages': prompt,
     }
     r = requests.post(url, json=req_data, headers=headers)
-    print(r.json())
+    #print(r.json())
     return r.json()
+
+
+def is_question(text: str) -> bool:
+    """
+    Detect questions.
+
+    This function was modified with code from ChatGPT.
+    """
+    doc = nlp(text)
+
+    if text.strip().endswith('?'):
+        return True
+
+    return any(token.dep_ == "attr" and token.head.pos_ == "AUX" for token in doc)

@@ -5,11 +5,11 @@
     },
     {
       "role": "system",
-      "content": "Here is more information about how you join and play. You start off by running /arcade in #arcade. Then open the slack thread and post a screenshot there. Afterwards run /shop, click open shop and spend atleast 1 ticket (maybe on some stickers). Fill out the student verification form. Then you can press the upgrade button in the DM with Arcadius & Hakkuun. Arcadius is the welcome bot and Hakkuun is the bot which tracks your sessions and scraps. To become a full Slack member, you need to buy something from the shop."
+      "content": "You start off by running /arcade in #arcade. Then open the slack thread and post a screenshot there. Afterwards run /shop, click open shop and spend atleast 1 ticket (maybe on some stickers). Fill out the student verification form. Then you can press the upgrade button in the DM with Arcadius & Hakkuun. Arcadius is the welcome bot and Hakkuun is the bot which tracks your sessions and scraps. To become a full Slack member, you need to buy something from the shop. 1 session = 1 ticket if approved."
     },
     {
       "role": "system",
-      "content": "You run /arcade in #arcade to work during that session. Each session is 1 hour. You need to post scraps during that hour. Scraps should be git commits. Link that in the slack thread. You can start as many sessions as you want but should post scrapbooks every 8-20 sessions ideally. A scrapbook is where you show your project to everyone. You should include a video and a github repo. Then Hakkuun will DM you asking you to link sessions. Each session is 1 ticket. Trade those tickets for cool loot by running /shop. Sessions are reviewed by humans and can take 1-2 weeks or more and are randomly reviewed."
+      "content": "You run /arcade in #arcade to work during that session. Each session is 1 hour. A session is just an hour of hacking (coding, no actual hacking) where you work on your project, a session is not a meeting. You need to post scraps during that hour. Scraps should be git commits. Link that in the slack thread. You can start as many sessions as you want but should post scrapbooks every 8-20 sessions ideally. A scrapbook is where you show your project to everyone. You should include a video and a github repo. Then Hakkuun will DM you asking you to link sessions. Trade those tickets for cool loot by running /shop. Sessions are reviewed by humans and can take 1-2 weeks or more and are randomly reviewed."
     },
     {
       "role": "system",
@@ -21,7 +21,7 @@
     },
     {
       "role": "system",
-      "content": "Projects must be experienceable. This means your scrapbook must contain a way for the user to see and experience the project. For example, like a website. They can be finished or works in progress (WIP) so long as the user can experience some part of it. You can host a website with #nest or Github Pages if its static. Python projects are hard to ship (ship means post a scrapbook) because not everyone has the dependencies and right version, etc. So python projects should have a requirements.txt,a poetry.lock, & make a release. Packages can be posted on PyPi."
+      "content": "Projects must be experienceable. This means your scrapbook must contain a way for the user to see and experience the project. For example, like a website. They can be finished or works in progress (WIP) so long as the user can experience some part of it. You can host a website with #nest or Github Pages if its static. Python projects are hard to ship (ship means post a scrapbook) because not everyone has the dependencies and right version, etc. So python projects should have a requirements.txt, a poetry.lock, & make a release. Packages can be posted on PyPi."
     },
     {
       "role": "system",
@@ -41,6 +41,6 @@
     },
     {
       "role": "system",
-      "content": "Users should refer to the constitution or FAQ for more information."
+      "content": "Users should refer to the constitution, ask staff or FAQ for more information."
     }
 ]
