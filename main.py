@@ -21,6 +21,10 @@ def handle_message_events(event, say):
         print("ignoring wrong channel")
         return
 
+    if not is_question(event["text"]):
+        print("Likely not a question, ignoring")
+        return
+    
     if event.get("parent_user_id", event["user"]) != event["user"]:
         print("Not author of a thread, ignoring")
         return
@@ -32,10 +36,6 @@ def handle_message_events(event, say):
     if event["user"] not in ["U07BU2HS17Z"]:
         print("ignoring not one of the felixs")
         print(event)
-        return
-
-    if not is_question(event["text"]):
-        print("Likely not a question, ignoring")
         return
 
     if event["user"] in ["opt-out-list"]: # TODO: Allow users to opt out

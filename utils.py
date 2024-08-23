@@ -34,3 +34,18 @@ def is_question(text: str) -> bool:
         return True
 
     return any(token.dep_ == "attr" and token.head.pos_ == "AUX" for token in doc)
+
+
+def get_shop_data():
+    url = "https://hackclub.com/api/arcade/shop/"
+    r = requests.get(url)
+    r.raise_for_status()
+
+    data_txt = "You can get the following items in the Arcade shop. "
+
+    for item in r.json():
+        name = item['name'].strip()
+        tickets = item['hours']
+        stock = item['stock'] if item['stock'] else 'infinite'
+        data_txt += f"{name} for {tickets} tickets, {stock} left. "
+    return data_txt
