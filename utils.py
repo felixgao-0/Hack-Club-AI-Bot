@@ -2,7 +2,7 @@ import json
 import os
 import threading
 import time
-from typing import Optional
+from typing import Optional, Union
 
 import requests
 
@@ -15,12 +15,11 @@ def ask_ai(question: str, *, context: Optional[str] = None) -> dict:
     global shop_data
     if not shop_data:
         shop_data = _get_data() # Get data if its somehow missing D:
-    #return {'id': 'chatcmpl-9zaUbHwHybVcyQqwMJcjCwu72svn5', 'object': 'chat.completion', 'created': 1724465313, 'model': 'gpt-3.5-turbo-0125', 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': 'I am an AI bot developed internally and do not use any specific LLM (Large Language Model). My purpose is to provide helpful information and assist users in understanding how to participate in the Arcade hackathon organized by Hack Club for high schoolers. If you have any questions about the hackathon or need further assistance, feel free to ask!', 'refusal': None}, 'logprobs': None, 'finish_reason': 'stop'}], 'usage': {'prompt_tokens': 1159, 'completion_tokens': 68, 'total_tokens': 1227}, 'system_fingerprint': None}
+    #return {'id': 'chatcmpl-9zaUbHwHybVcyQqwMJcjCwu72svn5', 'object': 'chat.completion', 'created': 1724465313, 'model': 'gpt-3.5-turbo-0125', 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': 'I am an AI bot developed internally and do not use any specific LLM (Large Language Model). My purpose is to provide helpful information and assist users in understanding how to participate in the Arcade hackathon organized by Hack Club for high schoolers. If you have any questions about the hackathon or need further assistance, feel free to ask!', 'refusal': None}, 'logprobs': None, 'finish_reason': 'stop'}], 'usage': {'prompt_tokens': 1159, 'completion_tokens': 68, 'total_tokens': 1227}, 'system_fingerprint': None} # type: ignore
     url = "https://jamsapi.hackclub.dev/openai/chat/completions"
     headers = {'Authorization': f'Bearer {os.environ["OPEN_AI_ARCADE"]}'}
 
-    with open('messages.json') as f:
-        prompt = json.load(f)
+    prompt = get_json('json_data/messages.json')
 
     prompt.append({"role": "user", "content": f"USER QUESTION: {question}"})
     prompt.append({"role": "system", "content": shop_data})
@@ -84,7 +83,12 @@ def get_username(app, user_id: int) -> str:
         return "Unknown User"
     return response["user"]["profile"]["display_name"]
 
-
 # Load shop data in the background every 60sec
 thread = threading.Thread(target=get_shop_data, daemon=True)
 thread.start()
+
+
+def get_json(filepath: str) -> Union[dict, list]:
+    with open(filepath) as f:
+        result = json.load(f)
+    return result
