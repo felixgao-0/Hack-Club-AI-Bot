@@ -19,24 +19,20 @@ app = App(
 authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD"]
 
 @app.event("message")
-def handle_message_events(event, say, client):
+def handle_message_events(event, say, client, logger):
     if event.get("parent_user_id", event["user"]) != event["user"]:
-        print("Ignoring: Not the thread author")
+        logger.warning("Ignoring, not the thread author")
         return
 
-    if event.get("subtype"):
-        print("Ignoring: Bot message or of subtype we don't care abt")
-
     if not is_question(event["text"]):
-        print("Ignoring: Not likely a question")
+        logger.warning("Ignoring, not likely a question")
         return
 
     text = event["text"] 
 
     text_lower = text.lower()
-    print(text_lower)
     if not text_lower.startswith("ai"):
-        print("User did not opt for AI to respond D:")
+        logger.warning("User did not opt for AI to responding, sending a message to convince")
         block = get_json("json_data/consent_prompt.json")
         say(
             text="Press the button below to have AI respond if you need help!",
@@ -45,9 +41,8 @@ def handle_message_events(event, say, client):
         )
         return
 
-    print(event)
-    #response = app.client.conversations_replies(channel=event["channel"], ts=event["event_ts"])
-    #print(response['messages'][0])
+    response = app.client.conversations_replies(channel=event["channel"], ts=event["event_ts"])
+    print(response['messages'])
     
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=event["channel"],
@@ -63,7 +58,7 @@ def handle_message_events(event, say, client):
     response_text = ask_ai(text)
     block = get_json("json_data/response_prompt.json")
     block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
-    print(block)
+
     say(
         text=response_text["choices"][0]["message"]["content"],
         blocks=block, 
@@ -149,6 +144,7 @@ def middleware_checks(context, next, logger):
         logger.warning("Ignoring, not authorized to use bot")
         return BoltResponse(status=401, body="Unauthorized user")
 
+    logger.info("Checks passed, moving to function :D")
     return next()
 
 if __name__ == "__main__":
