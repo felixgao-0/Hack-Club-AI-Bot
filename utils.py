@@ -2,7 +2,7 @@ import json
 import os
 import threading
 import time
-from typing import Optional, Union
+from typing import Optional
 
 import requests
 
@@ -88,7 +88,7 @@ thread = threading.Thread(target=get_shop_data, daemon=True)
 thread.start()
 
 
-def get_json(filepath: str) -> Union[dict, list]:
+def get_json(filepath: str): # TODO: I keep messing up the return type hint lol
     with open(filepath) as f:
         result = json.load(f)
     return result
