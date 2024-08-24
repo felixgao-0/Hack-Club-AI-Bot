@@ -5,13 +5,15 @@ import time
 
 import requests
 
+shop_data = None
 
 def ask_ai(question: str) -> dict:
     """
     Ask ChatGPT a Arcade related question!
     """
+    global shop_data
     if not shop_data:
-        ... # Make a request incase the data doesn't exist somehow
+        shop_data = _get_data() # Get data if its somehow missing D:
     url = "https://jamsapi.hackclub.dev/openai/chat/completions"
     headers = {'Authorization': f'Bearer {os.environ["OPEN_AI_ARCADE"]}'}
 
@@ -34,7 +36,7 @@ def is_question(text: str) -> bool:
     Detect questions.
     """
     # List of key words that indicate a question
-    question_words = ["who", "what", "where", "when", "why", "how", "does", "is", "did"]
+    question_words = ["who", "what", "where", "when", "why", "how", "does", "is", "did", "help"]
     if text.strip().endswith('?'):
         return True
 

@@ -36,13 +36,47 @@ def handle_message_events(event, say, client):
     print(text_lower)
     if not text_lower.startswith("ai"):
         print("User did not opt for AI to respond D:")
+        block = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Hello :wave:! I'm an AI help bot developed by Felíx. Press the button below to have me answer your question!"
+                }
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "plain_text",
+                        "text": "Pro Tip: Start your message with 'AI' to get a response instantly!",
+                        "emoji": True
+                    }
+                ]
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": ":blob_help: Answer My Question!",
+                            "emoji": True
+                        },
+                        "value": "yes",
+                        "action_id": "answer_question"
+                    }
+                ]
+            }
+        ]
         say(
-            text="""
-            Hi! I'm an AI bot that answers questions.
-            To have me answer your question press the button below!
-
-            (Pro tip: start your message with 'ai' to automatically get a response)
-            """
+            text="Press the button below to have an AI bot answer your question!",
+            blocks=block, 
+            thread_ts=event["ts"]
         )
         return
 
@@ -79,7 +113,7 @@ def handle_message_events(event, say, client):
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "*This bot uses AI, take with a few grains of salt. Refer to the constitution for exact information.* Bot by Felíx. :D"
+                    "text": "*This bot uses AI, take with a few grains of salt. Refer to the constitution as always.* Bot by Felíx. :D"
                 }
             ]
         }
@@ -94,6 +128,62 @@ def handle_message_events(event, say, client):
         name="spin-loading",
         timestamp=event["event_ts"]
     )
+
+
+@app.action("answer_question")
+def update_message(ack, body, say):
+    if body['user']['id'] != body['message']['parent_user_id']:
+        print("Ignoring btn press, doesn't own action :/")
+        return
+
+    ack()
+
+    thread_ts = body["message"]['thread_ts']
+    thread_channel = body['channel']['id']
+    response = app.client.conversations_replies(channel=thread_channel, ts=thread_ts)
+
+    top_message = response["messages"]
+    print(top_message)
+
+    app.client.reactions_add(
+        channel=thread_channel,
+        name="spin-loading",
+        timestamp=body['message']['ts']
+    )
+
+    response_text = ask_ai(text)
+    block = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": response_text["choices"][0]["message"]["content"]
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "*This bot uses AI, take with a few grains of salt. Refer to the constitution as always.* Bot by Felíx. :D"
+                }
+            ]
+        }
+    ]
+    say(
+        text=response_text["choices"][0]["message"]["content"],
+        blocks=block, 
+        thread_ts=event["ts"]
+    )
+    app.client.reactions_remove(
+        channel=thread_channel,
+        name="spin-loading",
+        timestamp=body['message']['ts']
+    )
+
 
 
 if __name__ == "__main__":
