@@ -30,7 +30,8 @@
                "emoji":true
             },
             "value":"yes",
-            "action_id":"answer_question"
+            "action_id":"answer_question",
+            "disabled":false
          }
       ]
    }
