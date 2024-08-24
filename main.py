@@ -16,7 +16,7 @@ app = App(
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
 
-authorized = ["U07BU2HS17Z", "U07BLJ1MBEE"]
+authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD"]
 
 @app.event("message")
 def handle_message_events(event, say, client):
@@ -63,6 +63,7 @@ def handle_message_events(event, say, client):
     response_text = ask_ai(text)
     block = get_json("json_data/response_prompt.json")
     block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
+    print(block)
     say(
         text=response_text["choices"][0]["message"]["content"],
         blocks=block, 
@@ -85,8 +86,7 @@ def answer_question_events(ack, client, body, say, logger):
     thread_ts = body["message"]['thread_ts']
     thread_channel = body['channel']['id']
 
-    edit_block = get_json("json_data/consent_prompt.json")
-    edit_block[:-1]['elements'][0]['disabled'] = True
+    edit_block = get_json("json_data/consent_prompt_no_btn.json")
     response = client.chat_update(
         channel=body['channel']['id'],
         ts=body['message']['ts'],
@@ -148,8 +148,6 @@ def middleware_checks(context, next, logger):
     if context["user_id"] not in authorized:
         logger.warning("Ignoring, not authorized to use bot")
         return BoltResponse(status=401, body="Unauthorized user")
-
-    #print(context)
 
     return next()
 
