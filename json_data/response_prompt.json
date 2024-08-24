@@ -1,0 +1,21 @@
+[
+    {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": "Felix you forgot to add the data into here! OOF"
+        }
+    },
+    {
+        "type": "divider"
+    },
+    {
+        "type": "context",
+        "elements": [
+            {
+                "type": "mrkdwn",
+                "text": "*This bot uses AI, take with a few grains of salt. Refer to the constitution as always.* Bot by Felíx. :D"
+            }
+        ]
+    }
+]

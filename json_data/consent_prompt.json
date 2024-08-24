@@ -1,0 +1,37 @@
+[
+   {
+      "type":"section",
+      "text":{
+         "type":"mrkdwn",
+         "text":"Hello :wave:! I'm an AI help bot developed by Felíx. Press the button below to have me answer your question!"
+      }
+   },
+   {
+      "type":"divider"
+   },
+   {
+      "type":"context",
+      "elements": [
+         {
+            "type":"plain_text",
+            "text":"Pro Tip: Start your message with 'AI' to get a response instantly! #bartosz-ai for more info.",
+            "emoji":true
+         }
+      ]
+   },
+   {
+      "type":"actions",
+      "elements":[
+         {
+            "type":"button",
+            "text":{
+               "type":"plain_text",
+               "text":":blob_help: Answer My Question!",
+               "emoji":true
+            },
+            "value":"yes",
+            "action_id":"answer_question"
+         }
+      ]
+   }
+]
