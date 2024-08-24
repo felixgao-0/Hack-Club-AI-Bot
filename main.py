@@ -2,16 +2,22 @@ import os
 
 from slack_bolt import App
 
-from utils import ask_ai, is_question
+from utils import ask_ai, is_question, get_username
 
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
 
+authorized = ["U07BU2HS17Z", "U07BLJ1MBEE"]
+
 @app.event("message")
 def handle_message_events(event, say, client):
-    text = event["text"]
+    try:
+        text = event["text"]
+    except KeyError as e:
+        print(f"Well we got an error D:\n{e}\n{event}")
+        return
     if event["channel"] != "C07JA93AMDZ": # Test channel
         print("Ignoring: Incorrect Channel")
         return
@@ -27,7 +33,7 @@ def handle_message_events(event, say, client):
     if event.get("subtype"):
         print("Ignoring: Bots don't respond to bots")
 
-    if event["user"] not in ["U07BU2HS17Z", "U07BLJ1MBEE"]:
+    if event["user"] not in authorized:
         print("Ignoring, not authorized to use bot")
         print(event)
         return
@@ -94,9 +100,8 @@ def handle_message_events(event, say, client):
         name="bartosz",
         timestamp=event["event_ts"]
     )
-    
+
     response_text = ask_ai(text)
-    #response_text = {'id': 'chatcmpl-9zaUbHwHybVcyQqwMJcjCwu72svn5', 'object': 'chat.completion', 'created': 1724465313, 'model': 'gpt-3.5-turbo-0125', 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': 'I am an AI bot developed internally and do not use any specific LLM (Large Language Model). My purpose is to provide helpful information and assist users in understanding how to participate in the Arcade hackathon organized by Hack Club for high schoolers. If you have any questions about the hackathon or need further assistance, feel free to ask!', 'refusal': None}, 'logprobs': None, 'finish_reason': 'stop'}], 'usage': {'prompt_tokens': 1159, 'completion_tokens': 68, 'total_tokens': 1227}, 'system_fingerprint': None} # type: ignore
     block = [
         {
             "type": "section",
@@ -131,27 +136,34 @@ def handle_message_events(event, say, client):
 
 
 @app.action("answer_question")
-def update_message(ack, body, say):
+def answer_question_events(ack, client, body, say):
+    ack()
     if body['user']['id'] != body['message']['parent_user_id']:
         print("Ignoring btn press, doesn't own action :/")
         return
 
-    ack()
+    if body['user']['id'] not in authorized:
+        print("Ignoring btn press, not authorized")
+        return
+
+    context_data: str = ""
 
     thread_ts = body["message"]['thread_ts']
     thread_channel = body['channel']['id']
-    response = app.client.conversations_replies(channel=thread_channel, ts=thread_ts)
+    response = client.conversations_replies(channel=thread_channel, ts=thread_ts)
 
-    top_message = response["messages"]
-    print(top_message)
+    for index, message in enumerate(response["messages"]):
+        if index == 0: # Ignore first one, we'll use it later on
+            continue
+        context_data += f"{get_username(app, message['user'])} SAID: {message['text']} "
 
-    app.client.reactions_add(
+    client.reactions_add(
         channel=thread_channel,
         name="spin-loading",
         timestamp=body['message']['ts']
     )
 
-    response_text = ask_ai(text)
+    response_text = ask_ai(response["messages"][0]['text'], context=context_data)
     block = [
         {
             "type": "section",
@@ -176,9 +188,9 @@ def update_message(ack, body, say):
     say(
         text=response_text["choices"][0]["message"]["content"],
         blocks=block, 
-        thread_ts=event["ts"]
+        thread_ts=body['message']['ts']
     )
-    app.client.reactions_remove(
+    client.reactions_remove(
         channel=thread_channel,
         name="spin-loading",
         timestamp=body['message']['ts']

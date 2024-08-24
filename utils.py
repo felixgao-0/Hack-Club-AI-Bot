@@ -2,18 +2,20 @@ import json
 import os
 import threading
 import time
+from typing import Optional
 
 import requests
 
 shop_data = None
 
-def ask_ai(question: str) -> dict:
+def ask_ai(question: str, *, context: Optional[str] = None) -> dict:
     """
     Ask ChatGPT a Arcade related question!
     """
     global shop_data
     if not shop_data:
         shop_data = _get_data() # Get data if its somehow missing D:
+    #return {'id': 'chatcmpl-9zaUbHwHybVcyQqwMJcjCwu72svn5', 'object': 'chat.completion', 'created': 1724465313, 'model': 'gpt-3.5-turbo-0125', 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': 'I am an AI bot developed internally and do not use any specific LLM (Large Language Model). My purpose is to provide helpful information and assist users in understanding how to participate in the Arcade hackathon organized by Hack Club for high schoolers. If you have any questions about the hackathon or need further assistance, feel free to ask!', 'refusal': None}, 'logprobs': None, 'finish_reason': 'stop'}], 'usage': {'prompt_tokens': 1159, 'completion_tokens': 68, 'total_tokens': 1227}, 'system_fingerprint': None}
     url = "https://jamsapi.hackclub.dev/openai/chat/completions"
     headers = {'Authorization': f'Bearer {os.environ["OPEN_AI_ARCADE"]}'}
 
@@ -22,12 +24,13 @@ def ask_ai(question: str) -> dict:
 
     prompt.append({"role": "user", "content": f"USER QUESTION: {question}"})
     prompt.append({"role": "system", "content": shop_data})
+    if context:
+        prompt.append({"role": "user", "content": context})
     req_data = {
         'model': 'gpt-3.5-turbo',
         'messages': prompt,
     }
     r = requests.post(url, json=req_data, headers=headers)
-    print(shop_data)
     return r.json()
 
 
@@ -68,6 +71,18 @@ def get_shop_data():
 
         print("Waiting 60sec")
         time.sleep(60)
+
+
+def get_username(app, user_id: int) -> str:
+    try:
+        response = app.client.users_info(user=user_id)
+    except Exception as e:
+        print(f"Error retrieving user info: {e}")
+        return "Unknown User"
+
+    if not response["ok"]:
+        return "Unknown User"
+    return response["user"]["profile"]["display_name"]
 
 
 # Load shop data in the background every 60sec
