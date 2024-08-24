@@ -8,17 +8,19 @@ nlp = spacy.load("en_core_web_sm")
 
 
 def ask_ai(question: str) -> dict:
+    shop_data = get_shop_data()
     url = "https://jamsapi.hackclub.dev/openai/chat/completions"
     headers = {'Authorization': f'Bearer {os.environ["OPEN_AI_ARCADE"]}'}
     with open('messages.json') as f:
         prompt = json.load(f)
     prompt.append({"role": "user", "content": question})
+    prompt.append({"role": "system", "content": shop_data})
     req_data = {
         'model': 'gpt-3.5-turbo',
         'messages': prompt,
     }
     r = requests.post(url, json=req_data, headers=headers)
-    #print(r.json())
+    print(shop_data)
     return r.json()
 
 
@@ -41,7 +43,7 @@ def get_shop_data():
     r = requests.get(url)
     r.raise_for_status()
 
-    data_txt = "You can get the following items in the Arcade shop. "
+    data_txt = "ITEMS: "
 
     for item in r.json():
         name = item['name'].strip()

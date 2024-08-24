@@ -17,11 +17,12 @@ def handle_app_mention_events(body, say):
 
 @app.event("message")
 def handle_message_events(event, say):
+    text = event["text"]
     if event["channel"] != "C07JA93AMDZ": # Test channel
         print("ignoring wrong channel")
         return
 
-    if not is_question(event["text"]):
+    if not is_question(text):
         print("Likely not a question, ignoring")
         return
     
@@ -32,18 +33,24 @@ def handle_message_events(event, say):
     if event.get("subtype"):
         print("Ignoring, bot")
         return
+
+    text_lower = text.lower()
+    print(text_lower)
+    if not text_lower.startswith("ai"):
+        print("User did not opt for AI to respond")
+        return
     
-    if event["user"] not in ["U07BU2HS17Z"]:
-        print("ignoring not one of the felixs")
+    if event["user"] not in ["U07BU2HS17Z", "U07BLJ1MBEE"]:
+        print("Ignoring, not authorized to use bot")
         print(event)
         return
 
-    if event["user"] in ["opt-out-list"]: # TODO: Allow users to opt out
-        return
-
     print(event)
-
-    response_text = ask_ai(event["text"])
+    #response = app.client.conversations_replies(channel=event["channel"], ts=event["thread"])
+    #print(response['messages'][0])
+    
+    response_text = ask_ai(text)
+    print(response_text)
     block = [
         {
             "type": "section",
@@ -60,7 +67,7 @@ def handle_message_events(event, say):
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "*This bot uses AI, take with a few grains of salt. Refer to the constitution for exact information.* Bot by Felíx. #ai-bartosz to opt out."
+                    "text": "*This bot uses AI, take with a few grains of salt. Refer to the constitution for exact information.* Bot by Felíx. :D"
                 }
             ]
         }
