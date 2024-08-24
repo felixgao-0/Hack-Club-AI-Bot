@@ -1,0 +1,22 @@
+[
+   {
+      "type":"section",
+      "text":{
+         "type":"mrkdwn",
+         "text":"You have requested me to answer you! I'll be with you shortly (or not... if the code breaks)."
+      }
+   },
+   {
+      "type":"divider"
+   },
+   {
+      "type":"context",
+      "elements": [
+         {
+            "type":"plain_text",
+            "text":"Pro Tip: Start your message with 'AI' to get a response instantly! #bartosz-ai for more info.",
+            "emoji":true
+         }
+      ]
+   }
+]
