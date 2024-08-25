@@ -49,21 +49,24 @@ def handle_message_events(event, say, client, logger):
         logger.warning("Ignoring, not likely a question")
         return
 
+    if event.get("subtype"):
+        logger.warning("Ignoring: We don't need to respond to subtypes lol")
+        return
+
     text = event["text"] 
 
     text_lower = text.lower()
     if not text_lower.startswith("ai"):
-        logger.warning("User did not opt for AI to responding, sending consent prompt")
+        logger.warning("User did not opt for AI to responding")
         block = get_json("json_data/consent_prompt.json")
-        say(
-            text="Press the button below to have AI respond if you need help!",
-            blocks=block, 
-            thread_ts=event["ts"]
-        )
+        if not event.get("parent_user_id"):
+            logger.info("Sending consent prompt")
+            say(
+              text="Press the button below to have AI respond if you need help!",
+              blocks=block, 
+              thread_ts=event["ts"]
+            )
         return
-
-    response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
-    reply_context = get_context(response['messages'])
 
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=event["channel"],
@@ -75,6 +78,9 @@ def handle_message_events(event, say, client, logger):
         name="bartosz",
         timestamp=event["event_ts"]
     )
+
+    response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
+    reply_context = get_context(response['messages'])
 
     response_text = ask_ai(text, context=reply_context)
     block = get_json("json_data/response_prompt.json")
@@ -89,6 +95,14 @@ def handle_message_events(event, say, client, logger):
         channel=event["channel"],
         name="spin-loading",
         timestamp=event["event_ts"]
+    )
+
+@app.event("app_mention")
+def handle_app_mention_events(event, say, logger):
+    logger.info("We got mentioned!")
+    say(
+        text="Hi! I'm a bot which helps people with their Arcade questions! Made by Felíx. #ai-bartosz for more info!", # type: ignore
+        thread_ts=event["ts"]
     )
 
 
@@ -109,15 +123,8 @@ def answer_question_events(ack, client, body, say, logger):
         blocks=edit_block
     )
 
-    context_data: str = ""
-
     response = client.conversations_replies(channel=thread_channel, ts=thread_ts)
-
-    for index, message in enumerate(response["messages"]):
-        if index == 0: # Ignore first one, we'll use it later on
-            continue
-        print()
-        context_data += f"{get_username(app, message['user'])} said {message['text']}. "
+    context_data = get_context(response['messages'])
 
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=thread_channel,
