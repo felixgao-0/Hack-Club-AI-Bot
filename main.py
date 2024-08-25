@@ -68,6 +68,9 @@ def handle_message_events(event, say, client, logger):
             )
         return
 
+    if event['user'] in opt_out_list: # Noo they don't want the ai D:
+        return
+
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=event["channel"],
         name="spin-loading",
@@ -79,8 +82,11 @@ def handle_message_events(event, say, client, logger):
         timestamp=event["event_ts"]
     )
 
-    response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
-    reply_context = get_context(response['messages'])
+    if event.get("thread_ts"):
+        response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
+        reply_context = get_context(response['messages'])
+    else:
+        reply_context = None # D:
 
     response_text = ask_ai(text, context=reply_context)
     block = get_json("json_data/response_prompt.json")
@@ -133,7 +139,7 @@ def answer_question_events(ack, client, body, say, logger):
     )
 
     response_text = ask_ai(response["messages"][0]['text'], context=context_data)
-    
+
     block = get_json("json_data/response_prompt.json")
     block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
 
@@ -156,10 +162,6 @@ def middleware_checks(context, next, logger):
     if context["channel_id"] != "C07JA93AMDZ": # Test channel
         logger.warning("Ignoring, Incorrect Channel")
         return BoltResponse(status=401, body="Incorrect channel")
-
-    #if event.get("parent_user_id", event["user"]) != event["user"]:
-    #    logger.warning("Ignoring: Not the thread author")
-    #    return
 
     event = context.get('body', {}).get('event', {})
     if event.get('type') == 'message':
