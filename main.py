@@ -16,7 +16,7 @@ app = App(
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
 
-authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD"]
+authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD", "U05F4B48GBF"]
 opt_out_list = [""]
 
 def get_context(messages_list: list) -> list:
