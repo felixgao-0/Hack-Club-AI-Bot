@@ -17,6 +17,27 @@ app = App(
 )
 
 authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD"]
+opt_out_list = [""]
+
+def get_context(messages_list: list) -> list:
+    """
+    Generates a context string for the AI to use. 
+    This allows the bot to add on to existing responses and help further.
+    """
+    reply_context = []
+    for message in messages_list:
+        reply_user = get_username(app, message['user'])
+        if reply_user == "Bartosz AI Competitor":
+            reply_context.append(
+                {"role": "system", "content": f"You replied with '{message['text']}'"}
+            )
+            reply_user = "You" # Don't confuse the AI with itself haha
+        elif message['user'] not in opt_out_list:
+            reply_context.append(
+                {"role": "user", "content": f"{reply_user} said '{message['text']}'"}
+            )
+    return reply_context
+
 
 @app.event("message")
 def handle_message_events(event, say, client, logger):
@@ -32,7 +53,7 @@ def handle_message_events(event, say, client, logger):
 
     text_lower = text.lower()
     if not text_lower.startswith("ai"):
-        logger.warning("User did not opt for AI to responding, sending a message to convince")
+        logger.warning("User did not opt for AI to responding, sending consent prompt")
         block = get_json("json_data/consent_prompt.json")
         say(
             text="Press the button below to have AI respond if you need help!",
@@ -41,9 +62,9 @@ def handle_message_events(event, say, client, logger):
         )
         return
 
-    response = app.client.conversations_replies(channel=event["channel"], ts=event["event_ts"])
-    print(response['messages'])
-    
+    response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
+    reply_context = get_context(response['messages'])
+
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=event["channel"],
         name="spin-loading",
@@ -55,7 +76,7 @@ def handle_message_events(event, say, client, logger):
         timestamp=event["event_ts"]
     )
 
-    response_text = ask_ai(text)
+    response_text = ask_ai(text, context=reply_context)
     block = get_json("json_data/response_prompt.json")
     block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
 
@@ -95,7 +116,8 @@ def answer_question_events(ack, client, body, say, logger):
     for index, message in enumerate(response["messages"]):
         if index == 0: # Ignore first one, we'll use it later on
             continue
-        context_data += f"{get_username(app, message['user'])} SAID: {message['text']} "
+        print()
+        context_data += f"{get_username(app, message['user'])} said {message['text']}. "
 
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=thread_channel,
