@@ -5,9 +5,18 @@ import threading
 import time
 from typing import Optional
 
+import psycopg2 # Portgresql db driver
 import requests
 
 shop_data = None
+
+conn_params = {
+    "dbname": "felixgao_bartosz_ai",
+    "user": "felixgao",
+    "password": os.environ['DB_PASSWORD'],
+    "host": "hackclub.app",
+    "port": "5432"
+}
 
 def ask_ai(question: str, *, context: Optional[list] = None) -> dict:
     """
@@ -100,3 +109,20 @@ def get_json(filepath: str): # TODO: I keep messing up the return type hint lol
     with open(filepath) as f:
         result = json.load(f)
     return result
+
+def get_opt_out() -> list[int]:
+    # save for later: SELECT COUNT(*) FROM opt_out WHERE user_id = 'insert id here'
+    with psycopg2.connect(**conn_params) as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM opt_out;")
+        result = [item[0] for item in cur.fetchall()]
+        conn.commit()
+    return result
+
+def add_opt_out(user_id: str) -> None:
+    with psycopg2.connect(**conn_params) as conn, conn.cursor() as cur:
+        cur.execute(f"""
+        INSERT INTO opt_out (user_id)
+        VALUES ('{user_id}');
+        """)
+
+        conn.commit()

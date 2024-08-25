@@ -3,7 +3,7 @@ import os
 
 from slack_bolt import App, BoltResponse
 
-from utils import ask_ai, get_json, get_username, is_question
+from utils import ask_ai, get_json, get_username, is_question, get_opt_out, add_opt_out
 
 logging.basicConfig(
     level=logging.INFO,  # Set the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -17,7 +17,6 @@ app = App(
 )
 
 authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD", "U05F4B48GBF"]
-opt_out_list = [""]
 
 def get_context(messages_list: list) -> list:
     """
@@ -32,10 +31,12 @@ def get_context(messages_list: list) -> list:
                 {"role": "system", "content": f"You replied with '{message['text']}'"}
             )
             reply_user = "You" # Don't confuse the AI with itself haha
-        elif message['user'] not in opt_out_list:
+        elif message['user'] not in get_opt_out():
             reply_context.append(
                 {"role": "user", "content": f"{reply_user} said '{message['text']}'"}
             )
+        else:
+            logger.warn(f"{message['user']} in opt-out list D:")
     return reply_context
 
 
@@ -69,6 +70,15 @@ def handle_message_events(event, say, client, logger):
             )
         return
 
+    if event.get("thread_ts"):
+        response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
+        consented_text_block = get_json('json_data/prompt_consented.json')[0]['text']['text']
+        messages = response['messages']
+        if messages[0]['text'].lower().startswith("ai") or messages[1]['text'].startswith(consented_text_block):
+            # if in thread, and no top-level message consent D:
+            logger.warn("Ignoring, no thread consent was received ( noo D: )")
+            return
+
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=event["channel"],
         name="spin-loading",
@@ -80,33 +90,21 @@ def handle_message_events(event, say, client, logger):
         timestamp=event["event_ts"]
     )
 
-    if event.get("thread_ts"): # If we're in a thread
-        logger.info("Question received, responding as thread w/ context")
+    if event.get("thread_ts"): # Get context data if thread
         response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
-        consented_text_block = get_json('json_data/prompt_consented.json')[0]['text']['text']
-        print(consented_text_block) # TODO: Remove debug thingy lata
-        print(response['messages'][1]['text'])
-        if response['messages'][0]['text'].lower().startswith("ai") or response['messages'][1]['text'].startswith(consented_text_block): # WIP
-            response_text = ask_ai(text, context=get_context(response['messages']))
-            block = get_json("json_data/response_prompt.json")
-            block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
+        thread_context = get_context(response['messages'])
+    else: # Not in thread, no context to get so womp womp
+        thread_context = None
 
-            say(
-                text=response_text["choices"][0]["message"]["content"],
-                blocks=block, 
-                thread_ts=event["ts"]
-            )
-    else:
-        logger.info("Question received, responding as a new question")
-        response_text = ask_ai(text)
-        block = get_json("json_data/response_prompt.json")
-        block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
+    response_text = ask_ai(text, context=thread_context)
+    block = get_json("json_data/response_prompt.json")
+    block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
 
-        say(
-            text=response_text["choices"][0]["message"]["content"],
-            blocks=block, 
-            thread_ts=event["ts"]
-        )
+    say(
+        text=response_text["choices"][0]["message"]["content"],
+        blocks=block, 
+        thread_ts=event["ts"]
+    )
 
     client.reactions_remove(
         channel=event["channel"],
@@ -171,6 +169,17 @@ def answer_question_events(ack, client, body, say, logger):
     )
 
 
+@app.command("/opt-out")
+def opt_out_command(ack, respond, body):
+    ack()
+    try:
+        add_opt_out(body['user_id'])
+    except:
+        respond(f"Something went wrong! Try again or ping/DM @Felix Gao and I will help you as soon as I literally can!")
+    else:
+        respond("You have been added to the opt-out list. Optionally, ping/DM @Felix Gao and tell me why you chose to opt out so I can improve the bot!")
+
+
 @app.middleware
 def middleware_checks(context, next, logger):
     logger.info("Running checks")
@@ -191,7 +200,7 @@ def middleware_checks(context, next, logger):
         logger.warning("Ignoring, not authorized to use bot")
         return BoltResponse(status=401, body="Unauthorized user")
 
-    if context["user_id"] in opt_out_list: # Noo they don't want the ai D:
+    if context["user_id"] in get_opt_out(): # Noo they don't want the ai D:
         logger.warning("Ignoring, data opt out")
         return BoltResponse(status=401, body="Opt out")
 

@@ -13,6 +13,7 @@ slack-bolt = "^1.20.0"
 requests = "^2.32.3"
 spacy = "^3.7.6"
 aiohttp = "^3.10.5"
+psycopg2-binary = "^2.9.9"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md
