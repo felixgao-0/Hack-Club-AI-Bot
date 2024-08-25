@@ -51,12 +51,18 @@ def handle_message_events(event, say, client, logger):
 
     if event.get("subtype"):
         logger.warning("Ignoring: We don't need to respond to subtypes lol")
+        print(event)
         return
 
     text = event["text"] 
+    if event.get("thread_ts"):
+        response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
+        reply_context = get_context(response['messages'])
+    else:
+        reply_context = None
 
     text_lower = text.lower()
-    if not text_lower.startswith("ai"):
+    if not text_lower.startswith("ai") or (event.get("parent_user_id") and ()):
         logger.warning("User did not opt for AI to responding")
         block = get_json("json_data/consent_prompt.json")
         if not event.get("parent_user_id"):
@@ -66,9 +72,6 @@ def handle_message_events(event, say, client, logger):
               blocks=block, 
               thread_ts=event["ts"]
             )
-        return
-
-    if event['user'] in opt_out_list: # Noo they don't want the ai D:
         return
 
     client.reactions_add( # Loading emoji so user knows whats happening
@@ -81,12 +84,6 @@ def handle_message_events(event, say, client, logger):
         name="bartosz",
         timestamp=event["event_ts"]
     )
-
-    if event.get("thread_ts"):
-        response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
-        reply_context = get_context(response['messages'])
-    else:
-        reply_context = None # D:
 
     response_text = ask_ai(text, context=reply_context)
     block = get_json("json_data/response_prompt.json")
@@ -174,6 +171,10 @@ def middleware_checks(context, next, logger):
     if context["user_id"] not in authorized:
         logger.warning("Ignoring, not authorized to use bot")
         return BoltResponse(status=401, body="Unauthorized user")
+
+    if context["user_id"] in opt_out_list: # Noo they don't want the ai D:
+        logger.warning("Ignoring, data opt out")
+        return BoltResponse(status=401, body="Opt out")
 
     logger.info("Checks passed, moving to function :D")
     return next()
