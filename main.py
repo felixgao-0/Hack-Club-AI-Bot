@@ -54,15 +54,21 @@ def handle_message_events(event, say, client, logger):
         print(event)
         return
 
-    text = event["text"] 
-    if event.get("thread_ts"):
+    text = event["text"]
+    text_lower = text.lower()
+
+    if event.get("thread_ts") and text_lower.startswith("ai"): # If we're in a thread
         response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
+        consented_text_block = get_json('json_data/prompt_consented.json')[0]['text']['text']
+        print(consented_text_block)
+        if response['messages'][0]['text'].lower().startswith("ai") or response['messages'][1]['text'] == consented_text_block: # WIP
+            ...
+            # The user has previously consented and wants the ai rn so lets respond!
         reply_context = get_context(response['messages'])
     else:
         reply_context = None
 
-    text_lower = text.lower()
-    if not text_lower.startswith("ai") or (event.get("parent_user_id") and ()):
+    if not text_lower.startswith("ai"): # or (event.get("parent_user_id") and ()):
         logger.warning("User did not opt for AI to responding")
         block = get_json("json_data/consent_prompt.json")
         if not event.get("parent_user_id"):
@@ -109,7 +115,7 @@ def handle_app_mention_events(event, say, logger):
     )
 
 
-@app.action("answer_question")
+@app.action("answer_question") # Consent btn
 def answer_question_events(ack, client, body, say, logger):
     ack()
     if body['user']['id'] != body['message']['parent_user_id']:
@@ -119,7 +125,7 @@ def answer_question_events(ack, client, body, say, logger):
     thread_ts = body["message"]['thread_ts']
     thread_channel = body['channel']['id']
 
-    edit_block = get_json("json_data/consent_prompt_no_btn.json")
+    edit_block = get_json("json_data/prompt_consented.json")
     response = client.chat_update(
         channel=body['channel']['id'],
         ts=body['message']['ts'],
@@ -129,6 +135,11 @@ def answer_question_events(ack, client, body, say, logger):
     response = client.conversations_replies(channel=thread_channel, ts=thread_ts)
     context_data = get_context(response['messages'])
 
+    client.reactions_add( # Loading emoji so user knows whats happening
+        channel=thread_channel,
+        name="bartosz",
+        timestamp=thread_ts
+    )
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=thread_channel,
         name="spin-loading",
