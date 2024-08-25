@@ -16,7 +16,7 @@ app = App(
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
 
-authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD", "U05F4B48GBF"]
+#authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD", "U05F4B48GBF", "U059VC0UDEU", "U063QV6B8LD"]
 
 def get_context(messages_list: list) -> list:
     """
@@ -42,9 +42,13 @@ def get_context(messages_list: list) -> list:
 
 @app.event("message")
 def handle_message_events(event, say, client, logger):
-    if event.get("parent_user_id", event["user"]) != event["user"]:
-        logger.warning("Ignoring, not the thread author")
-        return
+    try:
+        if event.get("parent_user_id", event["user"]) != event["user"]:
+            logger.warning("Ignoring, not the thread author")
+            return
+    except KeyError:
+        logger.error("Woah there we got an issue")
+        raise KeyError(event) from None
 
     if not is_question(event["text"]):
         logger.warning("Ignoring, not likely a question")
@@ -70,15 +74,6 @@ def handle_message_events(event, say, client, logger):
             )
         return
 
-    if event.get("thread_ts"):
-        response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
-        consented_text_block = get_json('json_data/prompt_consented.json')[0]['text']['text']
-        messages = response['messages']
-        if messages[0]['text'].lower().startswith("ai") or messages[1]['text'].startswith(consented_text_block):
-            # if in thread, and no top-level message consent D:
-            logger.warn("Ignoring, no thread consent was received ( noo D: )")
-            return
-
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=event["channel"],
         name="spin-loading",
@@ -89,6 +84,15 @@ def handle_message_events(event, say, client, logger):
         name="bartosz",
         timestamp=event["event_ts"]
     )
+
+    if event.get("thread_ts"):
+        response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
+        consented_text_block = get_json('json_data/prompt_consented.json')[0]['text']['text']
+        messages = response['messages']
+        if not messages[0]['text'].lower().startswith("ai") and not messages[1]['text'].startswith(consented_text_block):
+            # if in thread, and no top-level message consent D:
+            logger.warn("Ignoring, no thread consent was received ( noo D: )")
+            return
 
     if event.get("thread_ts"): # Get context data if thread
         response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
@@ -196,9 +200,9 @@ def middleware_checks(context, next, logger):
             print(subtype)
             return BoltResponse(status=401, body="Bot response, ignoring")
 
-    if context["user_id"] not in authorized:
-        logger.warning("Ignoring, not authorized to use bot")
-        return BoltResponse(status=401, body="Unauthorized user")
+    #if context["user_id"] not in authorized:
+    #    logger.warning("Ignoring, not authorized to use bot")
+    #    return BoltResponse(status=401, body="Unauthorized user")
 
     if context["user_id"] in get_opt_out(): # Noo they don't want the ai D:
         logger.warning("Ignoring, data opt out")
