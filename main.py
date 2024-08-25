@@ -57,17 +57,6 @@ def handle_message_events(event, say, client, logger):
     text = event["text"]
     text_lower = text.lower()
 
-    if event.get("thread_ts") and text_lower.startswith("ai"): # If we're in a thread
-        response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
-        consented_text_block = get_json('json_data/prompt_consented.json')[0]['text']['text']
-        print(consented_text_block)
-        if response['messages'][0]['text'].lower().startswith("ai") or response['messages'][1]['text'] == consented_text_block: # WIP
-            ...
-            # The user has previously consented and wants the ai rn so lets respond!
-        reply_context = get_context(response['messages'])
-    else:
-        reply_context = None
-
     if not text_lower.startswith("ai"): # or (event.get("parent_user_id") and ()):
         logger.warning("User did not opt for AI to responding")
         block = get_json("json_data/consent_prompt.json")
@@ -91,15 +80,34 @@ def handle_message_events(event, say, client, logger):
         timestamp=event["event_ts"]
     )
 
-    response_text = ask_ai(text, context=reply_context)
-    block = get_json("json_data/response_prompt.json")
-    block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
+    if event.get("thread_ts"): # If we're in a thread
+        logger.info("Question received, responding as thread w/ context")
+        response = client.conversations_replies(channel=event["channel"], ts=event["thread_ts"])
+        consented_text_block = get_json('json_data/prompt_consented.json')[0]['text']['text']
+        print(consented_text_block) # TODO: Remove debug thingy lata
+        print(response['messages'][1]['text'])
+        if response['messages'][0]['text'].lower().startswith("ai") or response['messages'][1]['text'].startswith(consented_text_block): # WIP
+            response_text = ask_ai(text, context=get_context(response['messages']))
+            block = get_json("json_data/response_prompt.json")
+            block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
 
-    say(
-        text=response_text["choices"][0]["message"]["content"],
-        blocks=block, 
-        thread_ts=event["ts"]
-    )
+            say(
+                text=response_text["choices"][0]["message"]["content"],
+                blocks=block, 
+                thread_ts=event["ts"]
+            )
+    else:
+        logger.info("Question received, responding as a new question")
+        response_text = ask_ai(text)
+        block = get_json("json_data/response_prompt.json")
+        block[0]['text']['text'] = response_text["choices"][0]["message"]["content"]
+
+        say(
+            text=response_text["choices"][0]["message"]["content"],
+            blocks=block, 
+            thread_ts=event["ts"]
+        )
+
     client.reactions_remove(
         channel=event["channel"],
         name="spin-loading",
@@ -135,7 +143,7 @@ def answer_question_events(ack, client, body, say, logger):
     response = client.conversations_replies(channel=thread_channel, ts=thread_ts)
     context_data = get_context(response['messages'])
 
-    client.reactions_add( # Loading emoji so user knows whats happening
+    client.reactions_add(
         channel=thread_channel,
         name="bartosz",
         timestamp=thread_ts
