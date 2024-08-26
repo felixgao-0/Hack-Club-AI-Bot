@@ -10,13 +10,18 @@ import requests
 
 shop_data = None
 
+# Start settings for utils.py
 conn_params = {
-    "dbname": "felixgao_bartosz_ai",
-    "user": "felixgao",
+    "dbname": "",
+    "user": "",
     "password": os.environ['DB_PASSWORD'],
-    "host": "hackclub.app",
-    "port": "5432"
+    "host": "",
+    "port": ""
 }
+open_ai_url = "https://jamsapi.hackclub.dev/openai/chat/completions"
+arcade_shop_url = "https://hackclub.com/api/arcade/shop/"
+api_token = os.environ["OPEN_AI_ARCADE"]
+# End settings for utils.py
 
 def ask_ai(question: str, *, context: Optional[list] = None) -> dict:
     """
@@ -26,9 +31,7 @@ def ask_ai(question: str, *, context: Optional[list] = None) -> dict:
     if not shop_data:
         print("No shop data, lets go fetch it!")
         shop_data = _get_data() # Get data if its somehow missing D:
-    #return {'id': 'chatcmpl-9zaUbHwHybVcyQqwMJcjCwu72svn5', 'object': 'chat.completion', 'created': 1724465313, 'model': 'gpt-3.5-turbo-0125', 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': 'This is a blank prompt for test purposes used to avoid wasting open ai credits. Hi!', 'refusal': None}, 'logprobs': None, 'finish_reason': 'stop'}], 'usage': {'prompt_tokens': 1159, 'completion_tokens': 68, 'total_tokens': 1227}, 'system_fingerprint': None} # type: ignore
-    url = "https://jamsapi.hackclub.dev/openai/chat/completions"
-    headers = {'Authorization': f'Bearer {os.environ["OPEN_AI_ARCADE"]}'}
+    headers = {'Authorization': f'Bearer {api_token}'}
 
     prompt = get_json('json_data/messages.json')
 
@@ -41,7 +44,7 @@ def ask_ai(question: str, *, context: Optional[list] = None) -> dict:
         'model': 'gpt-3.5-turbo',
         'messages': prompt,
     }
-    r = requests.post(url, json=req_data, headers=headers)
+    r = requests.post(open_ai_url, json=req_data, headers=headers)
     return r.json()
 
 
@@ -60,7 +63,7 @@ def is_question(text: str) -> bool:
 
 def _get_data():
     print("Getting shop data")
-    url = "https://hackclub.com/api/arcade/shop/"
+    url = arcade_shop_url
     r = requests.get(url)
     if r.status_code != 200:
         print(f"Request failed with status code {r.status_code}")

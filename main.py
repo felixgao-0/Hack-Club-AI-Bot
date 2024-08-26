@@ -11,13 +11,16 @@ logging.basicConfig(
     datefmt='%H:%M:%S'  # Date format
 )
 
+# Settings for main.py
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
 
-# Change this to an animated emoji of a loading wheel!
 loading_emoji_name = "loading"
+bot_name = "Bartosz AI Competitor"
+# Don't forget utils.py!
+# End settings for main.py
 
 def get_context(messages_list: list) -> list:
     """
@@ -27,7 +30,7 @@ def get_context(messages_list: list) -> list:
     reply_context = []
     for message in messages_list:
         reply_user = get_username(app, message['user'])
-        if reply_user == "Bartosz AI Competitor":
+        if reply_user == bot_name:
             reply_context.append(
                 {"role": "system", "content": f"You replied with '{message['text']}'"}
             )
