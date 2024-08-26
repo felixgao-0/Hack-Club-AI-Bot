@@ -14,4 +14,6 @@ You're still free to use the existing bot and run it in another workspace!
 
 Sadly I've been told to end this project D:, it was nice knowing the bot haha. 🫡
 
+Well... goodbye for now
+
 ![image](https://github.com/user-attachments/assets/5d17784d-93df-4825-b548-02b6a8d39d57)
