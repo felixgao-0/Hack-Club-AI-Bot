@@ -3,7 +3,7 @@
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": "Felix you forgot to add the data into here! OOF"
+            "text": "You forgot to add the data into here! OOF"
         }
     },
     {
@@ -14,7 +14,7 @@
         "elements": [
             {
                 "type": "mrkdwn",
-                "text": "*This bot uses AI, take with a few grains of salt. Refer to the constitution as always.* Bot by Felíx. :D"
+                "text": "*This bot uses AI, take with a few grains of salt. Refer to the constitution as always.*"
             }
         ]
     }

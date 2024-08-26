@@ -16,7 +16,8 @@ app = App(
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
 
-#authorized = ["U07BU2HS17Z", "U07BLJ1MBEE", "U079VBNLTPD", "U05F4B48GBF", "U059VC0UDEU", "U063QV6B8LD"]
+# Change this to an animated emoji of a loading wheel!
+loading_emoji_name = "loading"
 
 def get_context(messages_list: list) -> list:
     """
@@ -76,12 +77,7 @@ def handle_message_events(event, say, client, logger):
 
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=event["channel"],
-        name="spin-loading",
-        timestamp=event["event_ts"]
-    )
-    client.reactions_add(
-        channel=event["channel"],
-        name="bartosz",
+        name=loading_emoji_name,
         timestamp=event["event_ts"]
     )
 
@@ -112,7 +108,7 @@ def handle_message_events(event, say, client, logger):
 
     client.reactions_remove(
         channel=event["channel"],
-        name="spin-loading",
+        name=loading_emoji_name,
         timestamp=event["event_ts"]
     )
 
@@ -120,7 +116,7 @@ def handle_message_events(event, say, client, logger):
 def handle_app_mention_events(event, say, logger):
     logger.info("We got mentioned!")
     say(
-        text="Hi! I'm a bot which helps people with their Arcade questions! Made by Felíx. #ai-bartosz for more info!", # type: ignore
+        text="Hi! I'm a bot which helps people with their Arcade questions!", # type: ignore
         thread_ts=event["ts"]
     )
 
@@ -145,14 +141,9 @@ def answer_question_events(ack, client, body, say, logger):
     response = client.conversations_replies(channel=thread_channel, ts=thread_ts)
     context_data = get_context(response['messages'])
 
-    client.reactions_add(
-        channel=thread_channel,
-        name="bartosz",
-        timestamp=thread_ts
-    )
     client.reactions_add( # Loading emoji so user knows whats happening
         channel=thread_channel,
-        name="spin-loading",
+        name=loading_emoji_name,
         timestamp=body['message']['ts']
     )
 
@@ -168,7 +159,7 @@ def answer_question_events(ack, client, body, say, logger):
     )
     client.reactions_remove(
         channel=thread_channel,
-        name="spin-loading",
+        name=loading_emoji_name,
         timestamp=body['message']['ts']
     )
 
@@ -179,9 +170,9 @@ def opt_out_command(ack, respond, body):
     try:
         add_opt_out(body['user_id'])
     except:
-        respond(f"Something went wrong! Try again or ping/DM @Felix Gao and I will help you as soon as I literally can!")
+        respond(f"Something went wrong!")
     else:
-        respond("You have been added to the opt-out list. Optionally, ping/DM @Felix Gao and tell me why you chose to opt out so I can improve the bot!")
+        respond("You have been added to the opt-out list.")
 
 
 @app.middleware
@@ -199,10 +190,6 @@ def middleware_checks(context, next, logger):
             logger.warning("Ignoring, likely bot")
             print(subtype)
             return BoltResponse(status=401, body="Bot response, ignoring")
-
-    #if context["user_id"] not in authorized:
-    #    logger.warning("Ignoring, not authorized to use bot")
-    #    return BoltResponse(status=401, body="Unauthorized user")
 
     if context["user_id"] in get_opt_out(): # Noo they don't want the ai D:
         logger.warning("Ignoring, data opt out")
